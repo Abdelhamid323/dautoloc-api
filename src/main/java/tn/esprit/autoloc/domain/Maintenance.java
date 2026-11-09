@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "maintenance")
@@ -18,9 +18,13 @@ public class Maintenance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idMaintenance;
     @Column(nullable = false)
-    private Date dateDebut;
+    private LocalDate dateDebut;
     @Column(nullable = false)
-    private Date dateFin;
+    private LocalDate dateFin;
     @Column(nullable = false, length = 50)
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "vehicule_id", nullable = false)
+    private Vehicule vehicule;
 }

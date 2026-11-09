@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "agence")
 @Getter
@@ -23,7 +25,13 @@ public class Agence {
     @Column(nullable = false, length = 50)
     private String adresse;
 
-    @Column(nullable = false, precision = 8)
-    private BigDecimal telephone;
+    @Column(nullable = false, length =8)
+    private String telephone;
+
+    @OneToMany(mappedBy = "agence")
+    private List<Employe> employes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "agence")
+    private List<Vehicule> vehicules = new ArrayList<>();
 
 }

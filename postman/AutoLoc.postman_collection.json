@@ -1,0 +1,2927 @@
+{
+  "info": {
+    "name": "AutoLoc — Ateliers 1 à 6",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Exécuter les dossiers 01 à 04 dans l’ordre. Les dossiers 01 et 02 créent/lisent/modifient uniquement la démonstration. 03 attend volontairement des erreurs. 04 supprime uniquement les IDs capturés. Nettoyer avant de relancer la préparation. Aucun paiement autonome en écriture."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Préparation (ordre des dépendances)",
+      "item": [
+        {
+          "name": "Créer Agence",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Agence {{runToken}}\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Exécuter le nettoyage précédent avant de recommencer la préparation.",
+                  "const keys=[\"agenceId\", \"clientId\", \"equipementId\", \"vehiculeId\", \"employeId\", \"reservationId\", \"contratId\", \"maintenanceId\", \"paiement1Id\", \"paiement2Id\", \"paiementIds\"];",
+                  "if (keys.some(k => pm.collectionVariables.get(k))) { pm.execution.skipRequest(); throw new Error(\"Des IDs de démonstration existent déjà : lancer le nettoyage avant une nouvelle préparation.\"); }",
+                  "pm.collectionVariables.set(\"runToken\",pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g,\"\").slice(0,10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"agenceId\",d.idAgence); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idAgence).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/agences/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Ben Ali\",\n  \"prenom\": \"Amine\",\n  \"email\": \"demo.{{runToken}}@example.com\",\n  \"telephone\": \"+21671000000\",\n  \"numPermis\": \"P-{{runToken}}\",\n  \"dateInscription\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"clientId\",d.idClient); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idClient).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/clients/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Equipement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/equipements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"libelle\": \"GPS {{runToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"equipementId\",d.idEquipement); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idEquipement).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/equipements/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Vehicule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"immatriculation\": \"V-{{runToken}}\",\n  \"marque\": \"Renault\",\n  \"modele\": \"Clio\",\n  \"categorie\": \"CITADINE\",\n  \"tarifJournalier\": 80.5,\n  \"statut\": \"DISPONIBLE\",\n  \"agenceId\": {{agenceId}},\n  \"equipementIds\": [\n    {{equipementId}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"vehiculeId\",d.idVehicule); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idVehicule).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/vehicules/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Employe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Trabelsi\",\n  \"prenom\": \"Sana\",\n  \"role\": \"AGENT\",\n  \"agenceId\": {{agenceId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"employeId\",d.idEmploye); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idEmploye).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/employes/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-10\",\n  \"dateFin\": \"2026-11-12\",\n  \"statut\": \"CONFIRMEE\",\n  \"clientId\": {{clientId}},\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"reservationId\",d.idReservation); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idReservation).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/reservations/\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Contrat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contrats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateSignature\": \"2026-11-09\",\n  \"montantTotal\": 241.5,\n  \"valide\": true,\n  \"reservationId\": {{reservationId}},\n  \"paiements\": [\n    {\n      \"montant\": 100,\n      \"datePaiement\": \"2026-11-09\",\n      \"modePaiement\": \"CARTE\"\n    },\n    {\n      \"montant\": 141.5,\n      \"datePaiement\": \"2026-11-10\",\n      \"modePaiement\": \"VIREMENT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"contratId\",d.idContrat); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idContrat).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/contrats/\"); });",
+                  "if (pm.response.code === 201) { const p=pm.response.json().paiements; if(p && p.length===2) { pm.collectionVariables.set(\"paiement1Id\",p[0].idPaiement); pm.collectionVariables.set(\"paiement2Id\",p[1].idPaiement); pm.collectionVariables.set(\"paiementIds\",JSON.stringify(p.map(x=>x.idPaiement).sort())); } }",
+                  "pm.test(\"Deux paiements liés au contrat\", () => { const c=pm.response.json(); pm.expect(c.paiements).to.have.length(2); c.paiements.forEach(p => { pm.expect(p.contratId).to.eql(c.idContrat); pm.expect(p).not.to.have.property(\"contrat\"); }); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-15\",\n  \"dateFin\": \"2026-11-16\",\n  \"description\": \"Contrôle de démonstration\",\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set(\"maintenanceId\",d.idMaintenance); }",
+                  "pm.test(\"ID généré et Location\", () => { pm.expect(pm.response.json().idMaintenance).to.be.a(\"number\").above(0); pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/maintenances/\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — Lectures et modifications",
+      "item": [
+        {
+          "name": "Lister Agence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Agence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{agenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{agenceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"agenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (agenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idAgence).to.eql(Number(pm.collectionVariables.get(\"agenceId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Agence",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{agenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{agenceId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Nom modifié\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"agenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (agenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idAgence).to.eql(Number(pm.collectionVariables.get(\"agenceId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().nom).to.eql(\"Nom modifié\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Employe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Employe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employes/{{employeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes",
+                "{{employeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"employeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (employeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idEmploye).to.eql(Number(pm.collectionVariables.get(\"employeId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Employe",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employes/{{employeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes",
+                "{{employeId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Nom modifié\",\n  \"prenom\": \"Sana\",\n  \"role\": \"AGENT\",\n  \"agenceId\": {{agenceId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"employeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (employeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idEmploye).to.eql(Number(pm.collectionVariables.get(\"employeId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().nom).to.eql(\"Nom modifié\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Vehicule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Vehicule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules/{{vehiculeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules",
+                "{{vehiculeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"vehiculeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (vehiculeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idVehicule).to.eql(Number(pm.collectionVariables.get(\"vehiculeId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Vehicule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules/{{vehiculeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules",
+                "{{vehiculeId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"immatriculation\": \"V-{{runToken}}\",\n  \"marque\": \"Renault\",\n  \"modele\": \"Clio\",\n  \"categorie\": \"CITADINE\",\n  \"tarifJournalier\": 85.75,\n  \"statut\": \"DISPONIBLE\",\n  \"agenceId\": {{agenceId}},\n  \"equipementIds\": [\n    {{equipementId}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"vehiculeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (vehiculeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idVehicule).to.eql(Number(pm.collectionVariables.get(\"vehiculeId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().tarifJournalier).to.eql(85.75));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Equipement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Equipement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipements/{{equipementId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements",
+                "{{equipementId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"equipementId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (equipementId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idEquipement).to.eql(Number(pm.collectionVariables.get(\"equipementId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Equipement",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/equipements/{{equipementId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements",
+                "{{equipementId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"libelle\": \"GPS mis à jour\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"equipementId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (equipementId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idEquipement).to.eql(Number(pm.collectionVariables.get(\"equipementId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().libelle).to.eql(\"GPS mis à jour\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Client",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Client",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"clientId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (clientId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idClient).to.eql(Number(pm.collectionVariables.get(\"clientId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Client",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Nom modifié\",\n  \"prenom\": \"Amine\",\n  \"email\": \"demo.{{runToken}}@example.com\",\n  \"telephone\": \"+21671000000\",\n  \"numPermis\": \"P-{{runToken}}\",\n  \"dateInscription\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"clientId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (clientId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idClient).to.eql(Number(pm.collectionVariables.get(\"clientId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().nom).to.eql(\"Nom modifié\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Reservation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Reservation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"reservationId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (reservationId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idReservation).to.eql(Number(pm.collectionVariables.get(\"reservationId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Reservation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-10\",\n  \"dateFin\": \"2026-11-12\",\n  \"statut\": \"TERMINEE\",\n  \"clientId\": {{clientId}},\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"reservationId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (reservationId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idReservation).to.eql(Number(pm.collectionVariables.get(\"reservationId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().statut).to.eql(\"TERMINEE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Contrat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Contrat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrats/{{contratId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats",
+                "{{contratId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"contratId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (contratId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idContrat).to.eql(Number(pm.collectionVariables.get(\"contratId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Contrat",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contrats/{{contratId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats",
+                "{{contratId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateSignature\": \"2026-11-09\",\n  \"montantTotal\": 250,\n  \"valide\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"contratId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (contratId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idContrat).to.eql(Number(pm.collectionVariables.get(\"contratId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().montantTotal).to.eql(250));",
+                  "pm.test(\"Paiements et réservation conservés\", () => { const c=pm.response.json(); pm.expect(c.valide).to.eql(false); pm.expect(c.paiements).to.have.length(2); pm.expect(JSON.stringify(c.paiements.map(p=>p.idPaiement).sort())).to.eql(pm.collectionVariables.get(\"paiementIds\")); pm.expect(c.reservationId).to.eql(Number(pm.collectionVariables.get(\"reservationId\"))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Paiement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Paiement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/paiements/{{paiement1Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements",
+                "{{paiement1Id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"paiement1Id\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (paiement1Id)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idPaiement).to.eql(Number(pm.collectionVariables.get(\"paiement1Id\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister Maintenance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tableau JSON\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter Maintenance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"maintenanceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (maintenanceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bonne ressource\", () => pm.expect(pm.response.json().idMaintenance).to.eql(Number(pm.collectionVariables.get(\"maintenanceId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier Maintenance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-15\",\n  \"dateFin\": \"2026-11-16\",\n  \"description\": \"Contrôle mis à jour\",\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"maintenanceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (maintenanceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID conservé\", () => pm.expect(pm.response.json().idMaintenance).to.eql(Number(pm.collectionVariables.get(\"maintenanceId\"))));",
+                  "pm.test(\"Champ modifié\", () => pm.expect(pm.response.json().description).to.eql(\"Contrôle mis à jour\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter le second paiement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/paiements/{{paiement2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements",
+                "{{paiement2Id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"paiement2Id\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (paiement2Id)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 — Erreurs attendues",
+      "item": [
+        {
+          "name": "400 — nom vide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur de champ nom\", () => pm.expect(pm.response.json().erreurs).to.have.property(\"nom\"));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — email invalide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Ben Ali\",\n  \"prenom\": \"Amine\",\n  \"email\": \"invalide\",\n  \"telephone\": \"+21671000000\",\n  \"numPermis\": \"P-{{runToken}}\",\n  \"dateInscription\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — tarif négatif",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"immatriculation\": \"V-{{runToken}}\",\n  \"marque\": \"Renault\",\n  \"modele\": \"Clio\",\n  \"categorie\": \"CITADINE\",\n  \"tarifJournalier\": -1,\n  \"statut\": \"DISPONIBLE\",\n  \"agenceId\": {{agenceId}},\n  \"equipementIds\": [\n    {{equipementId}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — dates de réservation incohérentes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-12\",\n  \"dateFin\": \"2026-11-10\",\n  \"statut\": \"CONFIRMEE\",\n  \"clientId\": {{clientId}},\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — dates de maintenance incohérentes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"2026-11-16\",\n  \"dateFin\": \"2026-11-15\",\n  \"description\": \"Contrôle de démonstration\",\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — identifiant au POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Agence {{runToken}}\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\",\n  \"idAgence\": 123\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — paiement imbriqué négatif",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contrats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateSignature\": \"2026-11-09\",\n  \"montantTotal\": 241.5,\n  \"valide\": true,\n  \"reservationId\": {{reservationId}},\n  \"paiements\": [\n    {\n      \"montant\": -1,\n      \"datePaiement\": \"2026-11-09\",\n      \"modePaiement\": \"CARTE\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Chemin du champ imbriqué\", () => pm.expect(pm.response.json().erreurs).to.have.property(\"paiements[0].montant\"));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — enum invalide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Trabelsi\",\n  \"prenom\": \"Sana\",\n  \"role\": \"DIRECTEUR\",\n  \"agenceId\": {{agenceId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — date invalide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateDebut\": \"pas-une-date\",\n  \"dateFin\": \"2026-11-12\",\n  \"statut\": \"CONFIRMEE\",\n  \"clientId\": {{clientId}},\n  \"vehiculeId\": {{vehiculeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — ID dans un PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{agenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{agenceId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Agence {{runToken}}\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\",\n  \"idAgence\": 123\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"agenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (agenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — paramètre de chemin invalide",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "abc"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(400); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — identifiant absent",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/9223372036854775807",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "9223372036854775807"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — référence absente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Trabelsi\",\n  \"prenom\": \"Sana\",\n  \"role\": \"AGENT\",\n  \"agenceId\": 9223372036854775807\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — immatriculation existante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"immatriculation\": \"V-{{runToken}}\",\n  \"marque\": \"Renault\",\n  \"modele\": \"Clio\",\n  \"categorie\": \"CITADINE\",\n  \"tarifJournalier\": 80.5,\n  \"statut\": \"DISPONIBLE\",\n  \"agenceId\": {{agenceId}},\n  \"equipementIds\": [\n    {{equipementId}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(409); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — permis existant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Ben Ali\",\n  \"prenom\": \"Amine\",\n  \"email\": \"demo.{{runToken}}@example.com\",\n  \"telephone\": \"+21671000000\",\n  \"numPermis\": \"P-{{runToken}}\",\n  \"dateInscription\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(409); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — réservation déjà sous contrat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contrats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateSignature\": \"2026-11-09\",\n  \"montantTotal\": 241.5,\n  \"valide\": true,\n  \"reservationId\": {{reservationId}},\n  \"paiements\": [\n    {\n      \"montant\": 100,\n      \"datePaiement\": \"2026-11-09\",\n      \"modePaiement\": \"CARTE\"\n    },\n    {\n      \"montant\": 141.5,\n      \"datePaiement\": \"2026-11-10\",\n      \"modePaiement\": \"VIREMENT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(409); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — agence encore utilisée",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{agenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{agenceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"agenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (agenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(409); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "405 — paiement autonome interdit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 100,\n  \"datePaiement\": \"2026-11-09\",\n  \"modePaiement\": \"CARTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Allow conserve GET\", () => pm.expect(pm.response.headers.get(\"Allow\")).to.include(\"GET\"));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(405); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "415 — texte au lieu de JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Agence {{runToken}}\",\n  \"ville\": \"Tunis\",\n  \"adresse\": \"10 rue des Jasmins\",\n  \"telephone\": \"71000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 415\", () => pm.response.to.have.status(415));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(415); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 — Nettoyage et preuve de cascade",
+      "item": [
+        {
+          "name": "Supprimer Maintenance de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{maintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{maintenanceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"maintenanceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (maintenanceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedMaintenanceId\",pm.collectionVariables.get(\"maintenanceId\")); pm.collectionVariables.unset(\"maintenanceId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Maintenance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/maintenances/{{deletedMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maintenances",
+                "{{deletedMaintenanceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedMaintenanceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedMaintenanceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Contrat de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrats/{{contratId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats",
+                "{{contratId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"contratId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (contratId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedContratId\",pm.collectionVariables.get(\"contratId\")); pm.collectionVariables.unset(\"contratId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Contrat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contrats/{{deletedContratId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contrats",
+                "{{deletedContratId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedContratId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedContratId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier cascade paiement 1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/paiements/{{paiement1Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements",
+                "{{paiement1Id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"paiement1Id\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (paiement1Id)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "if (pm.response.code===404) pm.collectionVariables.unset(\"paiement1Id\");",
+                  "if (!pm.collectionVariables.get(\"paiement1Id\") && !pm.collectionVariables.get(\"paiement2Id\")) pm.collectionVariables.unset(\"paiementIds\");",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier cascade paiement 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/paiements/{{paiement2Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements",
+                "{{paiement2Id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"paiement2Id\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (paiement2Id)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "if (pm.response.code===404) pm.collectionVariables.unset(\"paiement2Id\");",
+                  "if (!pm.collectionVariables.get(\"paiement1Id\") && !pm.collectionVariables.get(\"paiement2Id\")) pm.collectionVariables.unset(\"paiementIds\");",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Reservation de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"reservationId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (reservationId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedReservationId\",pm.collectionVariables.get(\"reservationId\")); pm.collectionVariables.unset(\"reservationId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Reservation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{deletedReservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{deletedReservationId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedReservationId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedReservationId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Employe de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employes/{{employeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes",
+                "{{employeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"employeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (employeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedEmployeId\",pm.collectionVariables.get(\"employeId\")); pm.collectionVariables.unset(\"employeId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Employe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employes/{{deletedEmployeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employes",
+                "{{deletedEmployeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedEmployeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedEmployeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Vehicule de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules/{{vehiculeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules",
+                "{{vehiculeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"vehiculeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (vehiculeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedVehiculeId\",pm.collectionVariables.get(\"vehiculeId\")); pm.collectionVariables.unset(\"vehiculeId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Vehicule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicules/{{deletedVehiculeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicules",
+                "{{deletedVehiculeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedVehiculeId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedVehiculeId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Equipement de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipements/{{equipementId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements",
+                "{{equipementId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"equipementId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (equipementId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedEquipementId\",pm.collectionVariables.get(\"equipementId\")); pm.collectionVariables.unset(\"equipementId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Equipement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipements/{{deletedEquipementId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "equipements",
+                "{{deletedEquipementId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedEquipementId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedEquipementId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Client de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"clientId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (clientId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedClientId\",pm.collectionVariables.get(\"clientId\")); pm.collectionVariables.unset(\"clientId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Client",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{deletedClientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{deletedClientId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedClientId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedClientId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer Agence de démonstration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{agenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{agenceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"agenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (agenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Suppression sans corps\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "if (pm.response.code===204) { pm.collectionVariables.set(\"deletedAgenceId\",pm.collectionVariables.get(\"agenceId\")); pm.collectionVariables.unset(\"agenceId\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vérifier suppression Agence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agences/{{deletedAgenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agences",
+                "{{deletedAgenceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedAgenceId\")) { console.warn(\"Requête ignorée : identifiant de démonstration absent (deletedAgenceId)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erreur structurée\", () => { const e=pm.response.json(); pm.expect(e.statut).to.eql(404); pm.expect(e.message).to.be.a(\"string\").and.not.empty; pm.expect(e.chemin).to.include(\"/api/\"); pm.expect(e.horodatage).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
