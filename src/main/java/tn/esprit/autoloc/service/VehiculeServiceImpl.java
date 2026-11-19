@@ -16,6 +16,9 @@ import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.web.dto.VehiculeCreateRequest;
 import tn.esprit.autoloc.web.dto.VehiculeResponse;
 import tn.esprit.autoloc.web.dto.VehiculeUpdateRequest;
+import tn.esprit.autoloc.web.dto.VehiculeDTO;
+import tn.esprit.autoloc.domain.Maintenance;
+
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class VehiculeServiceImpl implements IVehiculeService {
     private final VehiculeMapper mapper;
     private final IAgenceRepository agenceRepository;
     private final IEquipementRepository equipementRepository;
+    private final tn.esprit.autoloc.repository.IMaintenanceRepository maintenanceRepository;
 
     private Vehicule load(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Vehicule", id));
@@ -105,5 +109,27 @@ public class VehiculeServiceImpl implements IVehiculeService {
         entity.getEquipements().clear();
         repository.delete(entity);
         repository.flush();
+    }
+
+    @Override @Transactional
+    public VehiculeDTO affecterVehiculeAEquipement(Long idVehicule, Long idEquipement) {
+        Vehicule vehicule = load(idVehicule);
+        Equipement equipement = equipementRepository.findById(idEquipement).orElseThrow(() -> new ResourceNotFoundException("Equipement", idEquipement));
+        if (!vehicule.getEquipements().contains(equipement)) vehicule.getEquipements().add(equipement);
+        if (!equipement.getVehicules().contains(vehicule)) equipement.getVehicules().add(vehicule);
+        return mapper.toDTO(repository.saveAndFlush(vehicule));
+    }
+    @Override @Transactional
+    public VehiculeDTO affecterMaintenanceAvehicule(String description, String immatriculation) {
+        Vehicule vehicule = repository.findByImmatriculation(immatriculation).orElseThrow(() -> new ResourceNotFoundException("Vehicule introuvable"));
+        List<Maintenance> maintenances = maintenanceRepository.findByDescription(description);
+        if (maintenances.isEmpty()) throw new ResourceNotFoundException("Maintenance introuvable");
+        if (maintenances.size() > 1) throw new BusinessConflictException("Plusieurs maintenances correspondent");
+        Maintenance maintenance = maintenances.get(0);
+        if (maintenance.getVehicule() != null) maintenance.getVehicule().getMaintenances().remove(maintenance);
+        maintenance.setVehicule(vehicule);
+        if (!vehicule.getMaintenances().contains(maintenance)) vehicule.getMaintenances().add(maintenance);
+        maintenanceRepository.saveAndFlush(maintenance);
+        return mapper.toDTO(vehicule);
     }
 }

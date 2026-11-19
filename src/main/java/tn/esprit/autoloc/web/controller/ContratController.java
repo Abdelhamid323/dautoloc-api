@@ -17,6 +17,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.*;
+import tn.esprit.autoloc.web.dto.ContratDTO;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+
 
 @RestController
 @RequestMapping("/contrats")
@@ -88,5 +92,14 @@ public class ContratController {
     public ResponseEntity<Void> deleteById(@Parameter(description = "Identifiant de la ressource", required = true) @PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/affecter-reservation")
+    @Operation(summary = "Affecter un contrat a une reservation")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Affectation effectuee"), @ApiResponse(responseCode = "400", description = "Dates invalides"), @ApiResponse(responseCode = "404", description = "Ressource introuvable"), @ApiResponse(responseCode = "409", description = "Conflit")})
+    public ContratDTO affecterContratAReservation(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateSignature,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        return service.affecterContratAReservation(dateSignature, dateDebut, dateFin);
     }
 }

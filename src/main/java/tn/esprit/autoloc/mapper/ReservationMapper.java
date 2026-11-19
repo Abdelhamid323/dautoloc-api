@@ -6,6 +6,9 @@ import tn.esprit.autoloc.domain.Reservation;
 import tn.esprit.autoloc.web.dto.ReservationCreateRequest;
 import tn.esprit.autoloc.web.dto.ReservationResponse;
 import tn.esprit.autoloc.web.dto.ReservationUpdateRequest;
+import tn.esprit.autoloc.web.dto.ReservationResponseDTO;
+import tn.esprit.autoloc.web.dto.ContratDTO;
+
 
 @Component
 @RequiredArgsConstructor
@@ -32,5 +35,18 @@ public class ReservationMapper {
         entity.setDateDebut(dto.getDateDebut());
         entity.setDateFin(dto.getDateFin());
         entity.setStatut(dto.getStatut());
+    }
+
+    public ReservationResponseDTO toDTO(Reservation entity) {
+        ReservationResponseDTO dto = new ReservationResponseDTO();
+        dto.setIdReservation(entity.getIdReservation()); dto.setDateDebut(entity.getDateDebut()); dto.setDateFin(entity.getDateFin()); dto.setStatut(entity.getStatut());
+        dto.setClientId(entity.getClient().getIdClient()); dto.setClientNom(entity.getClient().getNom()); dto.setClientPrenom(entity.getClient().getPrenom());
+        dto.setVehiculeId(entity.getVehicule().getIdVehicule()); dto.setVehiculeImmatriculation(entity.getVehicule().getImmatriculation());
+        if (entity.getContrat() != null) {
+            var contrat = entity.getContrat(); ContratDTO c = new ContratDTO();
+            c.setIdContrat(contrat.getIdContrat()); c.setDateSignature(contrat.getDateSignature()); c.setMontantTotal(contrat.getMontantTotal()); c.setValide(contrat.isValide());
+            c.setReservationId(entity.getIdReservation()); c.setReservationDateDebut(entity.getDateDebut()); c.setReservationDateFin(entity.getDateFin()); dto.setContrat(c);
+        }
+        return dto;
     }
 }

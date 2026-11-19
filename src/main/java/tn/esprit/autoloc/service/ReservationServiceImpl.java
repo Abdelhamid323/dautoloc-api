@@ -15,6 +15,14 @@ import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.web.dto.ReservationCreateRequest;
 import tn.esprit.autoloc.web.dto.ReservationResponse;
 import tn.esprit.autoloc.web.dto.ReservationUpdateRequest;
+import tn.esprit.autoloc.web.dto.ReservationResponseDTO;
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
+import tn.esprit.autoloc.domain.Contrat;
+import tn.esprit.autoloc.exception.BusinessConflictException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.temporal.ChronoUnit;
+
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +32,7 @@ public class ReservationServiceImpl implements IReservationService {
     private final ReservationMapper mapper;
     private final IClientRepository clientRepository;
     private final IVehiculeRepository vehiculeRepository;
+    private final tn.esprit.autoloc.repository.IContratRepository contratRepository;
 
     private Reservation load(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Reservation", id));
@@ -88,5 +97,35 @@ public class ReservationServiceImpl implements IReservationService {
         Reservation entity = load(id);
         repository.delete(entity);
         repository.flush();
+    }
+
+    @Override @Transactional
+    public ReservationResponseDTO affecterReservationAClient(Long idReservation, String nom, String prenom) {
+        Reservation reservation = load(idReservation);
+        List<Client> clients = clientRepository.findByNomAndPrenom(nom.trim(), prenom.trim());
+        if (clients.isEmpty()) throw new ResourceNotFoundException("Client introuvable");
+        if (clients.size() > 1) throw new BusinessConflictException("Plusieurs clients correspondent");
+        Client client = clients.get(0);
+        if (reservation.getClient() != null) reservation.getClient().getReservations().remove(reservation);
+        reservation.setClient(client);
+        if (!client.getReservations().contains(reservation)) client.getReservations().add(reservation);
+        return mapper.toDTO(repository.saveAndFlush(reservation));
+    }
+
+    @Override @Transactional
+    public ReservationResponseDTO creerReservationEtContratAssocie(ReservationWithContratRequestDTO requestDTO) {
+        if (requestDTO.getDateFin().isBefore(requestDTO.getDateDebut())) throw new IllegalArgumentException("Dates invalides");
+        Client client = clientRepository.findById(requestDTO.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client", requestDTO.getClientId()));
+        Vehicule vehicule = vehiculeRepository.findById(requestDTO.getVehiculeId()).orElseThrow(() -> new ResourceNotFoundException("Vehicule", requestDTO.getVehiculeId()));
+        Reservation reservation = new Reservation();
+        reservation.setDateDebut(requestDTO.getDateDebut()); reservation.setDateFin(requestDTO.getDateFin()); reservation.setStatut(requestDTO.getStatut());
+        reservation.setClient(client); reservation.setVehicule(vehicule); client.getReservations().add(reservation); vehicule.getReservations().add(reservation);
+        reservation = repository.saveAndFlush(reservation);
+        Contrat contrat = new Contrat(); contrat.setDateSignature(requestDTO.getDateSignature()); contrat.setValide(requestDTO.getValide());
+        BigDecimal montant = requestDTO.getMontantTotal();
+        if (montant == null) montant = vehicule.getTarifJournalier().multiply(BigDecimal.valueOf(Math.max(1, ChronoUnit.DAYS.between(requestDTO.getDateDebut(), requestDTO.getDateFin())))).setScale(2, RoundingMode.HALF_UP);
+        contrat.setMontantTotal(montant); contrat.setReservation(reservation); reservation.setContrat(contrat);
+        contratRepository.saveAndFlush(contrat);
+        return mapper.toDTO(reservation);
     }
 }

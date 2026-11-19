@@ -17,6 +17,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.*;
+import tn.esprit.autoloc.web.dto.ReservationResponseDTO;
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
+import org.springframework.http.HttpStatus;
+
 
 @RestController
 @RequestMapping("/reservations")
@@ -88,5 +92,19 @@ public class ReservationController {
     public ResponseEntity<Void> deleteById(@Parameter(description = "Identifiant de la ressource", required = true) @PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{idReservation}/affecter-client")
+    @Operation(summary = "Affecter une reservation a un client")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Affectation effectuee"), @ApiResponse(responseCode = "404", description = "Ressource introuvable"), @ApiResponse(responseCode = "409", description = "Client ambigu")})
+    public ReservationResponseDTO affecterReservationAClient(@PathVariable Long idReservation, @RequestParam String nom, @RequestParam String prenom) {
+        return service.affecterReservationAClient(idReservation, nom, prenom);
+    }
+    @PostMapping("/avec-contrat")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Creer une reservation avec son contrat")
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "Reservation creee"), @ApiResponse(responseCode = "400", description = "Requete invalide"), @ApiResponse(responseCode = "404", description = "Ressource introuvable"), @ApiResponse(responseCode = "409", description = "Conflit")})
+    public ReservationResponseDTO creerReservationEtContratAssocie(@Valid @RequestBody ReservationWithContratRequestDTO requestDTO) {
+        return service.creerReservationEtContratAssocie(requestDTO);
     }
 }

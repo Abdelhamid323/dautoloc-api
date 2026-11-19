@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.*;
+import tn.esprit.autoloc.web.dto.VehiculeDTO;
+
 
 @RestController
 @RequestMapping("/vehicules")
@@ -88,5 +90,18 @@ public class VehiculeController {
     public ResponseEntity<Void> deleteById(@Parameter(description = "Identifiant de la ressource", required = true) @PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{idVehicule}/affecter-equipement/{idEquipement}")
+    @Operation(summary = "Affecter un equipement a un vehicule")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Affectation effectuee"), @ApiResponse(responseCode = "404", description = "Ressource introuvable")})
+    public VehiculeDTO affecterVehiculeAEquipement(@PathVariable Long idVehicule, @PathVariable Long idEquipement) {
+        return service.affecterVehiculeAEquipement(idVehicule, idEquipement);
+    }
+    @PutMapping("/affecter-maintenance")
+    @Operation(summary = "Affecter une maintenance a un vehicule")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Affectation effectuee"), @ApiResponse(responseCode = "404", description = "Ressource introuvable"), @ApiResponse(responseCode = "409", description = "Maintenance ambigue")})
+    public VehiculeDTO affecterMaintenanceAvehicule(@RequestParam String description, @RequestParam String immatriculation) {
+        return service.affecterMaintenanceAvehicule(description, immatriculation);
     }
 }
